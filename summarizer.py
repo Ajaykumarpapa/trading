@@ -59,10 +59,9 @@ def extractive_summarize(text, num_sentences=3, detail_level="Intermediate"):
     
     # Adjust num_sentences based on detail_level for extractive
     if detail_level == "Beginner":
-        num_sentences = max(1, int(num_sentences * 0.5)) # Half the sentences, minimum 1
+        num_sentences = max(1, int(num_sentences * 0.5))
     elif detail_level == "Expert":
-        num_sentences = min(len(list(doc.sents)), int(num_sentences * 1.5)) # 1.5 times sentences, maximum total sentences
-    # Intermediate uses the default num_sentences
+        num_sentences = min(len(list(doc.sents)), int(num_sentences * 1.5))
 
     # Select top sentences
     summary_sentences = nlargest(min(num_sentences, len(sentence_scores)), sentence_scores, key=sentence_scores.get)
@@ -73,20 +72,18 @@ def abstractive_summarize(text, detail_level="Intermediate"):
     """Abstractive summarization using BART"""
     try:
         summarizer = load_abstractive_model()
-        # Handle long texts by chunking if necessary
-        max_input_length = 1024  # BART's max input length
+        max_input_length = 1024
         if len(text.split()) > max_input_length:
             words = text.split()
             text = " ".join(words[:max_input_length])
         
-        # Adjust max_length and min_length based on detail_level for abstractive
         if detail_level == "Beginner":
             min_length = 20
             max_length = 80
         elif detail_level == "Expert":
             min_length = 50
             max_length = 200
-        else: # Intermediate
+        else:
             min_length = 30
             max_length = 130
 
@@ -99,28 +96,20 @@ def extract_text_from_url(url):
     """Extract text content from a URL"""
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.content, "html.parser")
         
-        # Remove script and style elements
         for script in soup(["script", "style"]):
             script.decompose()
         
-        # Try to find main content areas
         main_content = None
         content_selectors = [
-            "article",
-            "[role=\"main\"]",
-            ".content",
-            ".main-content",
-            ".article-content",
-            ".post-content",
-            "#content",
-            "#main"
+            "article", "[role=\"main\"]", ".content", ".main-content",
+            ".article-content", ".post-content", "#content", "#main"
         ]
         
         for selector in content_selectors:
@@ -128,14 +117,11 @@ def extract_text_from_url(url):
             if main_content:
                 break
         
-        # If no main content found, use body
         if not main_content:
             main_content = soup.find("body")
         
         if main_content:
-            # Extract text and clean it
             text = main_content.get_text()
-            # Clean up whitespace
             text = re.sub(r"\s+", " ", text).strip()
             title = soup.title.string if soup.title else "Extracted Content"
             return text, title
@@ -157,35 +143,28 @@ def extract_text_from_pdf(pdf_file):
     except Exception as e:
         return None, f"Error extracting text from PDF: {str(e)}"
 
-# Main app
 def main():
-    # Header
     st.title("🧠 AI Document Summarizer")
     st.markdown("Transform lengthy documents into concise, intelligent summaries using advanced NLP techniques.")
     
-    # Sidebar
     st.sidebar.header("⚙️ Configuration")
     
-    # Input method selection
     input_method = st.sidebar.radio(
         "Choose input method:",
         ["📝 Text Input", "🔗 URL Input", "📄 PDF Upload"]
     )
     
-    # Summarization method
     method = st.sidebar.selectbox(
         "Summarization Method:",
         ["extractive", "abstractive"],
         format_func=lambda x: "🔍 Extractive (Key Sentences)" if x == "extractive" else "🤖 Abstractive (AI Generated)"
     )
     
-    # Detail level selection
     detail_level = st.sidebar.selectbox(
         "Summary Detail Level:",
         ["Beginner", "Intermediate", "Expert"]
     )
 
-    # Number of sentences (only for extractive)
     if method == "extractive":
         num_sentences = st.sidebar.slider(
             "Number of sentences:",
@@ -194,9 +173,8 @@ def main():
             value=3
         )
     else:
-        num_sentences = 3  # Default for abstractive
+        num_sentences = 3
     
-    # Main content area
     col1, col2 = st.columns([2, 1])
     
     with col1:
@@ -213,7 +191,7 @@ def main():
             )
             title = "User Input"
             
-        elif input_method == "🔗 URL Input":  # URL Input
+        elif input_method == "🔗 URL Input":
             url = st.text_input(
                 "Enter URL:",
                 placeholder="https://example.com/article"
@@ -230,7 +208,7 @@ def main():
                 else:
                     st.error(f"❌ {title}")
         
-        else: # PDF Upload
+        else:
             pdf_file = st.file_uploader("Upload a PDF file", type=["pdf"])
             if pdf_file:
                 with st.spinner("Extracting text from PDF..."):
@@ -243,7 +221,6 @@ def main():
                 else:
                     st.error(f"❌ {title}")
 
-        # Summarize button
         if text_to_summarize and st.button("✨ Generate Summary", type="primary"):
             if len(text_to_summarize.strip()) < 50:
                 st.warning("⚠️ Please provide more text for better summarization results.")
@@ -259,10 +236,8 @@ def main():
                     end_time = time.time()
                     processing_time = end_time - start_time
                 
-                # Display results
                 st.header("📊 Summary Results")
                 
-                # Metrics
                 col_metric1, col_metric2, col_metric3, col_metric4 = st.columns(4)
                 
                 with col_metric1:
@@ -278,11 +253,9 @@ def main():
                 with col_metric4:
                     st.metric("Processing Time", f"{processing_time:.2f}s")
                 
-                # Summary display
                 st.subheader("📝 Generated Summary")
                 st.info(summary)
                 
-                # Copy button (using st.code for easy copying)
                 st.subheader("📋 Copy Summary")
                 st.code(summary, language=None)
     
@@ -305,6 +278,7 @@ def main():
         ### 📊 Features
         - ✅ Text input support
         - ✅ URL content extraction
+        - ✅ PDF file upload
         - ✅ Real-time processing
         - ✅ Compression metrics
         - ✅ Easy copy functionality
